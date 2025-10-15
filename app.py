@@ -16,12 +16,10 @@ except ImportError:
 app = Flask(__name__)
 
 class SmartTaskPlanner:
-    """
-    AI-powered task planner that breaks down goals into actionable tasks
+    """AI-powered task planner that breaks down goals into actionable tasks
     with realistic timelines and dependency management.
-    Enhanced with Google Gemini AI for intelligent suggestions.
-    """
-    
+    Enhanced with Google Gemini AI for intelligent suggestions."""
+
     def __init__(self):
         self.use_gemini = GEMINI_AVAILABLE
         if self.use_gemini:
@@ -31,7 +29,7 @@ class SmartTaskPlanner:
             except Exception as e:
                 print(f"⚠️ Gemini initialization failed: {e}")
                 self.use_gemini = False
-        
+
         self.phases_templates = {
             'product_launch': ['Planning', 'Design', 'Development', 'Testing', 'Marketing', 'Deployment'],
             'app_development': ['Planning', 'UI/UX Design', 'Frontend Development', 'Backend Development', 'Testing', 'Deployment'],
@@ -52,34 +50,27 @@ class SmartTaskPlanner:
         elif any(word in goal_lower for word in ['event', 'conference', 'meetup']):
             return 'event_planning'
         return 'default'
-    
+
     def parse_duration(self, goal):
         """Extract duration from goal text"""
         goal_lower = goal.lower()
-        
-        # Check for days
+
         if 'day' in goal_lower:
             for i in range(1, 100):
                 if f"{i} day" in goal_lower:
                     return i
-        
-        # Check for weeks
         if 'week' in goal_lower:
             for i in range(1, 20):
                 if f"{i} week" in goal_lower:
                     return i * 7
-        
-        # Check for months
         if 'month' in goal_lower:
             for i in range(1, 12):
                 if f"{i} month" in goal_lower:
                     return i * 30
-        
-        # Default to 14 days
-        return 14
+        return 14  # default
     
     def generate_tasks_for_phase(self, phase, project_type, phase_duration, start_date):
-        """Generate tasks for a specific phase"""
+        """Generate tasks for each phase"""
         task_templates = {
             'Planning': [
                 {'name': 'Market Research', 'desc': 'Analyze competitors and target audience', 'ratio': 0.3, 'priority': 'High'},
@@ -177,151 +168,96 @@ class SmartTaskPlanner:
         }
         
         templates = task_templates.get(phase, [
-            {'name': f'{phase} Task 1', 'desc': f'Complete first task of {phase}', 'ratio': 0.5, 'priority': 'High'},
-            {'name': f'{phase} Task 2', 'desc': f'Complete second task of {phase}', 'ratio': 0.5, 'priority': 'Medium'}
+            {'name': f'{phase} Task 1', 'desc': f'First task in {phase}', 'ratio': 0.5, 'priority': 'High'},
+            {'name': f'{phase} Task 2', 'desc': f'Second task in {phase}', 'ratio': 0.5, 'priority': 'Medium'}
         ])
-        
+
         tasks = []
         current_date = start_date
-        
-        # Ensure phase_duration is at least the number of tasks
         min_duration = len(templates)
         if phase_duration < min_duration:
             phase_duration = min_duration
-        
-        for i, template in enumerate(templates):
-            duration_days = max(1, round(phase_duration * template['ratio']))
+
+        for i, t in enumerate(templates):
+            duration_days = max(1, round(phase_duration * t['ratio']))
             end_date = current_date + timedelta(days=duration_days - 1)
-            
-            # Determine dependencies
-            dependencies = []
-            if i > 0:
-                dependencies = [templates[i-1]['name']]
-            
-            task = {
-                'task_name': template['name'],
-                'description': template['desc'],
+            dependencies = [templates[i-1]['name']] if i > 0 else []
+            tasks.append({
+                'task_name': t['name'],
+                'description': t['desc'],
                 'duration': f"{duration_days} day{'s' if duration_days > 1 else ''}",
                 'start_date': current_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d'),
                 'dependencies': dependencies,
-                'priority': template['priority']
-            }
-            
-            tasks.append(task)
+                'priority': t['priority']
+            })
             current_date = end_date + timedelta(days=1)
-        
         return tasks
     
     def generate_plan(self, goal):
-        """Generate complete project plan"""
-        # Parse input
+        """Generate complete project plan with accurate total duration"""
         project_type = self.detect_project_type(goal)
         total_duration = self.parse_duration(goal)
         phases = self.phases_templates[project_type]
-        
-        # Calculate phase durations intelligently
         num_phases = len(phases)
-        base_duration = max(1, total_duration // num_phases)
-        remaining = total_duration % num_phases
-        
-        # Distribute duration based on project type and phase importance
-        phase_durations = []
-        
-        # Different distribution strategies based on project type
+
+        # Weighted distribution per project type
         if project_type == 'product_launch':
-            # Product launch: More time for Development and Marketing
-            weights = [0.12, 0.15, 0.28, 0.18, 0.15, 0.12]  # Planning, Design, Dev, Test, Marketing, Deploy
+            weights = [0.12, 0.15, 0.28, 0.18, 0.15, 0.12]
         elif project_type == 'app_development':
-            # App dev: More time for Development phases
-            weights = [0.10, 0.15, 0.25, 0.25, 0.15, 0.10]  # Planning, UI/UX, Frontend, Backend, Testing, Deploy
+            weights = [0.10, 0.15, 0.25, 0.25, 0.15, 0.10]
         elif project_type == 'marketing_campaign':
-            # Marketing: More time for Content and Execution
-            weights = [0.15, 0.15, 0.25, 0.15, 0.20, 0.10]  # Research, Strategy, Content, Channels, Execute, Analyze
+            weights = [0.15, 0.15, 0.25, 0.15, 0.20, 0.10]
         elif project_type == 'event_planning':
-            # Events: More time for Logistics and Execution
-            weights = [0.12, 0.18, 0.25, 0.15, 0.20, 0.10]  # Concept, Planning, Logistics, Marketing, Execute, Follow-up
+            weights = [0.12, 0.18, 0.25, 0.15, 0.20, 0.10]
         else:
-            # Default: Equal distribution
             weights = [1.0 / num_phases] * num_phases
-        
-        # Ensure weights match number of phases
+
         if len(weights) != num_phases:
             weights = [1.0 / num_phases] * num_phases
-        
-        # Calculate durations based on weights
-        for i in range(num_phases):
-            duration = max(1, round(total_duration * weights[i]))
-            phase_durations.append(duration)
-        
-        # Adjust to exactly match total_duration
-        current_total = sum(phase_durations)
-        diff = total_duration - current_total
-        
-        # Distribute the difference
-        if diff > 0:
-            # Add extra days to middle phases
-            for i in range(diff):
-                phase_durations[num_phases // 2 + (i % 2)] += 1
-        elif diff < 0:
-            # Remove days from phases with most time
+
+        # Compute durations and adjust to exact total
+        phase_durations = [max(1, round(total_duration * w)) for w in weights]
+        diff = total_duration - sum(phase_durations)
+        if diff != 0:
             for i in range(abs(diff)):
-                max_idx = phase_durations.index(max(phase_durations))
-                if phase_durations[max_idx] > 1:
-                    phase_durations[max_idx] -= 1
-        
-        # Final verification
-        assert sum(phase_durations) == total_duration, "Phase durations don't match total duration"
-        
-        # Generate phases and tasks
+                idx = i % num_phases
+                if diff > 0:
+                    phase_durations[idx] += 1
+                elif phase_durations[idx] > 1:
+                    phase_durations[idx] -= 1
+
         start_date = datetime.now()
         current_date = start_date
-        phase_list = []
-        all_milestones = []
-        
+        phase_list, milestones = [], []
+
         for i, phase_name in enumerate(phases):
-            phase_duration = phase_durations[i]
-            tasks = self.generate_tasks_for_phase(phase_name, project_type, phase_duration, current_date)
-            
-            phase_list.append({
-                'phase': phase_name,
-                'tasks': tasks
-            })
-            
-            # Add milestone at end of key phases
+            duration = phase_durations[i]
+            tasks = self.generate_tasks_for_phase(phase_name, project_type, duration, current_date)
+            phase_list.append({'phase': phase_name, 'tasks': tasks})
+
             if i in [0, num_phases // 2, num_phases - 1]:
                 milestone_date = tasks[-1]['end_date'] if tasks else current_date.strftime('%Y-%m-%d')
-                all_milestones.append(f"{phase_name} Complete ({milestone_date})")
-            
-            # Update current date
+                milestones.append(f"{phase_name} Complete ({milestone_date})")
+
+            # ✅ CRITICAL: Move to next day after phase ends (no overlap, no gaps)
             if tasks:
                 last_task_end = datetime.strptime(tasks[-1]['end_date'], '%Y-%m-%d')
                 current_date = last_task_end + timedelta(days=1)
-        
-        # Generate summary
-        end_date = current_date - timedelta(days=1)
-        actual_duration = (end_date - start_date).days + 1
-        
-        # Ensure we match the requested duration exactly
-        if actual_duration != total_duration:
-            # Recalculate end date to match requested duration
-            end_date = start_date + timedelta(days=total_duration - 1)
-            actual_duration = total_duration
-        
-        # Use Google AI to enhance summary if available
-        ai_insights = self.get_ai_insights(goal, num_phases, actual_duration) if self.use_gemini else ""
-        
-        base_remarks = f"Optimized {project_type.replace('_', ' ').title()} plan with {num_phases} phases across {actual_duration} days. Timeline accounts for dependencies and realistic task allocation."
-        
+
+        # Calculate exact end date based on requested duration
+        end_date = start_date + timedelta(days=total_duration - 1)
+        ai_insights = self.get_ai_insights(goal, num_phases, total_duration) if self.use_gemini else ""
+
         summary = {
-            'milestones': all_milestones,
-            'remarks': f"{base_remarks} {ai_insights}" if ai_insights else base_remarks
+            'milestones': milestones,
+            'remarks': f"Optimized {project_type.replace('_', ' ').title()} plan with {num_phases} phases across {total_duration} days. "
+                       f"Timeline accounts for dependencies and realistic task allocation. {ai_insights}"
         }
-        
-        # Build final plan
-        plan = {
+
+        return {
             'goal': goal,
-            'total_duration': f"{actual_duration} days",
+            'total_duration': f"{total_duration} days",
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'phases': phase_list,
@@ -329,26 +265,17 @@ class SmartTaskPlanner:
             'ai_enhanced': self.use_gemini,
             'project_type': project_type
         }
-        
-        return plan
     
     def get_ai_insights(self, goal, num_phases, duration):
-        """Get AI-powered insights using Google Gemini"""
+        """Generate short AI insight"""
         try:
             prompt = f"""Given this project goal: "{goal}"
-            
-With {num_phases} phases over {duration} days, provide ONE brief, actionable insight or recommendation (max 20 words) to ensure project success. Focus on potential risks or optimization opportunities."""
-            
+With {num_phases} phases over {duration} days, give ONE short actionable insight (max 20 words)."""
             response = self.model.generate_content(prompt)
             insight = response.text.strip()
-            
-            # Clean up the response
-            if len(insight) > 150:
-                insight = insight[:147] + "..."
-            
-            return insight
+            return insight[:150] if len(insight) > 150 else insight
         except Exception as e:
-            print(f"AI insight generation failed: {e}")
+            print(f"AI insight error: {e}")
             return ""
 
 
@@ -414,11 +341,10 @@ Provide ONE suggestion only (max 15 words):"""
 
 @app.route('/api/status', methods=['GET'])
 def api_status():
-    """API endpoint to check system status"""
     return jsonify({
         'status': 'online',
         'google_ai': GEMINI_AVAILABLE,
-        'version': '1.1.0'
+        'version': '1.2.0'
     }), 200
 
 
