@@ -138,9 +138,33 @@ class SmartTaskPlanner:
                 {'name': 'Content Planning', 'desc': 'Plan content calendar', 'ratio': 0.3, 'priority': 'Medium'},
                 {'name': 'Create Content', 'desc': 'Write, design, and produce content', 'ratio': 0.7, 'priority': 'High'}
             ],
+            'Channel Setup': [
+                {'name': 'Setup Social Media', 'desc': 'Configure social media accounts', 'ratio': 0.4, 'priority': 'High'},
+                {'name': 'Setup Analytics', 'desc': 'Configure tracking and analytics', 'ratio': 0.3, 'priority': 'Medium'},
+                {'name': 'Test Channels', 'desc': 'Verify all channels are working', 'ratio': 0.3, 'priority': 'High'}
+            ],
             'Execution': [
                 {'name': 'Implementation', 'desc': 'Execute planned activities', 'ratio': 0.7, 'priority': 'High'},
                 {'name': 'Monitoring', 'desc': 'Track progress and adjust', 'ratio': 0.3, 'priority': 'Medium'}
+            ],
+            'Analysis': [
+                {'name': 'Collect Data', 'desc': 'Gather performance metrics', 'ratio': 0.3, 'priority': 'High'},
+                {'name': 'Analyze Results', 'desc': 'Evaluate campaign effectiveness', 'ratio': 0.4, 'priority': 'High'},
+                {'name': 'Report Findings', 'desc': 'Create performance report', 'ratio': 0.3, 'priority': 'Medium'}
+            ],
+            'Concept': [
+                {'name': 'Define Event Vision', 'desc': 'Establish event goals and theme', 'ratio': 0.5, 'priority': 'High'},
+                {'name': 'Budget Planning', 'desc': 'Create initial budget estimate', 'ratio': 0.5, 'priority': 'High'}
+            ],
+            'Logistics': [
+                {'name': 'Venue Selection', 'desc': 'Research and book venue', 'ratio': 0.35, 'priority': 'High'},
+                {'name': 'Vendor Coordination', 'desc': 'Contract with suppliers and vendors', 'ratio': 0.35, 'priority': 'High'},
+                {'name': 'Timeline Creation', 'desc': 'Develop detailed event schedule', 'ratio': 0.3, 'priority': 'Medium'}
+            ],
+            'Follow-up': [
+                {'name': 'Thank You Communications', 'desc': 'Send thank you messages to attendees', 'ratio': 0.3, 'priority': 'Medium'},
+                {'name': 'Collect Feedback', 'desc': 'Gather and analyze attendee feedback', 'ratio': 0.4, 'priority': 'High'},
+                {'name': 'Final Report', 'desc': 'Create event summary and learnings', 'ratio': 0.3, 'priority': 'Medium'}
             ],
             'Review': [
                 {'name': 'Evaluate Results', 'desc': 'Analyze outcomes and metrics', 'ratio': 0.6, 'priority': 'High'},
@@ -159,6 +183,11 @@ class SmartTaskPlanner:
         
         tasks = []
         current_date = start_date
+        
+        # Ensure phase_duration is at least the number of tasks
+        min_duration = len(templates)
+        if phase_duration < min_duration:
+            phase_duration = min_duration
         
         for i, template in enumerate(templates):
             duration_days = max(1, round(phase_duration * template['ratio']))
@@ -191,28 +220,58 @@ class SmartTaskPlanner:
         total_duration = self.parse_duration(goal)
         phases = self.phases_templates[project_type]
         
-        # Calculate phase durations
+        # Calculate phase durations intelligently
         num_phases = len(phases)
-        base_duration = total_duration // num_phases
+        base_duration = max(1, total_duration // num_phases)
         remaining = total_duration % num_phases
         
-        # Distribute duration (give more time to middle phases)
+        # Distribute duration based on project type and phase importance
         phase_durations = []
-        for i in range(num_phases):
-            if i == 0:  # Planning gets less time
-                phase_durations.append(max(1, base_duration - 1))
-            elif i < num_phases // 2:  # Early phases get standard time
-                phase_durations.append(base_duration)
-            elif i < num_phases - 1:  # Middle phases get more time
-                phase_durations.append(base_duration + 1)
-            else:  # Final phase gets remaining time
-                phase_durations.append(base_duration + remaining)
         
-        # Adjust to match total
-        while sum(phase_durations) < total_duration:
-            phase_durations[num_phases // 2] += 1
-        while sum(phase_durations) > total_duration:
-            phase_durations[-1] -= 1
+        # Different distribution strategies based on project type
+        if project_type == 'product_launch':
+            # Product launch: More time for Development and Marketing
+            weights = [0.12, 0.15, 0.28, 0.18, 0.15, 0.12]  # Planning, Design, Dev, Test, Marketing, Deploy
+        elif project_type == 'app_development':
+            # App dev: More time for Development phases
+            weights = [0.10, 0.15, 0.25, 0.25, 0.15, 0.10]  # Planning, UI/UX, Frontend, Backend, Testing, Deploy
+        elif project_type == 'marketing_campaign':
+            # Marketing: More time for Content and Execution
+            weights = [0.15, 0.15, 0.25, 0.15, 0.20, 0.10]  # Research, Strategy, Content, Channels, Execute, Analyze
+        elif project_type == 'event_planning':
+            # Events: More time for Logistics and Execution
+            weights = [0.12, 0.18, 0.25, 0.15, 0.20, 0.10]  # Concept, Planning, Logistics, Marketing, Execute, Follow-up
+        else:
+            # Default: Equal distribution
+            weights = [1.0 / num_phases] * num_phases
+        
+        # Ensure weights match number of phases
+        if len(weights) != num_phases:
+            weights = [1.0 / num_phases] * num_phases
+        
+        # Calculate durations based on weights
+        for i in range(num_phases):
+            duration = max(1, round(total_duration * weights[i]))
+            phase_durations.append(duration)
+        
+        # Adjust to exactly match total_duration
+        current_total = sum(phase_durations)
+        diff = total_duration - current_total
+        
+        # Distribute the difference
+        if diff > 0:
+            # Add extra days to middle phases
+            for i in range(diff):
+                phase_durations[num_phases // 2 + (i % 2)] += 1
+        elif diff < 0:
+            # Remove days from phases with most time
+            for i in range(abs(diff)):
+                max_idx = phase_durations.index(max(phase_durations))
+                if phase_durations[max_idx] > 1:
+                    phase_durations[max_idx] -= 1
+        
+        # Final verification
+        assert sum(phase_durations) == total_duration, "Phase durations don't match total duration"
         
         # Generate phases and tasks
         start_date = datetime.now()
@@ -243,10 +302,16 @@ class SmartTaskPlanner:
         end_date = current_date - timedelta(days=1)
         actual_duration = (end_date - start_date).days + 1
         
+        # Ensure we match the requested duration exactly
+        if actual_duration != total_duration:
+            # Recalculate end date to match requested duration
+            end_date = start_date + timedelta(days=total_duration - 1)
+            actual_duration = total_duration
+        
         # Use Google AI to enhance summary if available
         ai_insights = self.get_ai_insights(goal, num_phases, actual_duration) if self.use_gemini else ""
         
-        base_remarks = f"Optimized plan with {num_phases} phases across {actual_duration} days. Timeline accounts for dependencies and realistic task allocation."
+        base_remarks = f"Optimized {project_type.replace('_', ' ').title()} plan with {num_phases} phases across {actual_duration} days. Timeline accounts for dependencies and realistic task allocation."
         
         summary = {
             'milestones': all_milestones,
@@ -261,7 +326,8 @@ class SmartTaskPlanner:
             'end_date': end_date.strftime('%Y-%m-%d'),
             'phases': phase_list,
             'summary': summary,
-            'ai_enhanced': self.use_gemini
+            'ai_enhanced': self.use_gemini,
+            'project_type': project_type
         }
         
         return plan
