@@ -174,14 +174,43 @@ class SmartTaskPlanner:
 
         tasks = []
         current_date = start_date
-        min_duration = len(templates)
-        if phase_duration < min_duration:
-            phase_duration = min_duration
+        num_tasks = len(templates)
 
+        # ✅ FIX: Calculate task durations that sum EXACTLY to phase_duration
+        if phase_duration < num_tasks:
+            # Phase too short - assign 1 day to first N tasks
+            task_durations = [1 if i < phase_duration else 0 for i in range(num_tasks)]
+        else:
+            # Calculate initial durations based on ratios
+            task_durations = [max(0, round(phase_duration * t['ratio'])) for t in templates]
+            # Ensure at least 1 day for non-zero allocations
+            task_durations = [max(1, d) if d > 0 else 0 for d in task_durations]
+            
+            # Adjust to match phase_duration exactly
+            total_task_days = sum(task_durations)
+            diff = phase_duration - total_task_days
+            
+            if diff > 0:
+                # Add extra days to tasks with highest ratios
+                for _ in range(diff):
+                    max_idx = max(range(num_tasks), 
+                                  key=lambda i: templates[i]['ratio'] if task_durations[i] > 0 else 0)
+                    task_durations[max_idx] += 1
+            elif diff < 0:
+                # Remove days from tasks with most allocation
+                for _ in range(abs(diff)):
+                    max_idx = max(range(num_tasks), key=lambda i: task_durations[i])
+                    if task_durations[max_idx] > 1:
+                        task_durations[max_idx] -= 1
+        
+        # Generate tasks (skip tasks with 0 duration)
         for i, t in enumerate(templates):
-            duration_days = max(1, round(phase_duration * t['ratio']))
+            duration_days = task_durations[i]
+            if duration_days == 0:
+                continue  # Skip tasks with no time allocated
+                
             end_date = current_date + timedelta(days=duration_days - 1)
-            dependencies = [templates[i-1]['name']] if i > 0 else []
+            dependencies = [templates[i-1]['name']] if i > 0 and task_durations[i-1] > 0 else []
             tasks.append({
                 'task_name': t['name'],
                 'description': t['desc'],
@@ -344,7 +373,7 @@ def api_status():
     return jsonify({
         'status': 'online',
         'google_ai': GEMINI_AVAILABLE,
-        'version': '1.2.0'
+        'version': '1.3.0'
     }), 200
 
 
