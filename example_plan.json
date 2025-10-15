@@ -1,0 +1,154 @@
+{
+  "goal": "Launch a product in 2 weeks",
+  "total_duration": "14 days",
+  "start_date": "2025-10-15",
+  "end_date": "2025-10-28",
+  "phases": [
+    {
+      "phase": "Planning",
+      "tasks": [
+        {
+          "task_name": "Market Research",
+          "description": "Analyze competitors and target audience",
+          "duration": "1 day",
+          "start_date": "2025-10-15",
+          "end_date": "2025-10-15",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "Define Requirements",
+          "description": "Document features and specifications",
+          "duration": "1 day",
+          "start_date": "2025-10-16",
+          "end_date": "2025-10-16",
+          "dependencies": ["Market Research"],
+          "priority": "High"
+        }
+      ]
+    },
+    {
+      "phase": "Design",
+      "tasks": [
+        {
+          "task_name": "Wireframing",
+          "description": "Create low-fidelity layouts",
+          "duration": "1 day",
+          "start_date": "2025-10-17",
+          "end_date": "2025-10-17",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "UI Design",
+          "description": "Design high-fidelity mockups",
+          "duration": "1 day",
+          "start_date": "2025-10-18",
+          "end_date": "2025-10-18",
+          "dependencies": ["Wireframing"],
+          "priority": "High"
+        }
+      ]
+    },
+    {
+      "phase": "Development",
+      "tasks": [
+        {
+          "task_name": "Setup Development Environment",
+          "description": "Configure tools and frameworks",
+          "duration": "1 day",
+          "start_date": "2025-10-19",
+          "end_date": "2025-10-19",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "Core Feature Development",
+          "description": "Build main functionality",
+          "duration": "2 days",
+          "start_date": "2025-10-20",
+          "end_date": "2025-10-21",
+          "dependencies": ["Setup Development Environment"],
+          "priority": "High"
+        }
+      ]
+    },
+    {
+      "phase": "Testing",
+      "tasks": [
+        {
+          "task_name": "Unit Testing",
+          "description": "Test individual components",
+          "duration": "1 day",
+          "start_date": "2025-10-22",
+          "end_date": "2025-10-22",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "Integration Testing",
+          "description": "Test system integration",
+          "duration": "1 day",
+          "start_date": "2025-10-23",
+          "end_date": "2025-10-23",
+          "dependencies": ["Unit Testing"],
+          "priority": "High"
+        }
+      ]
+    },
+    {
+      "phase": "Marketing",
+      "tasks": [
+        {
+          "task_name": "Create Marketing Materials",
+          "description": "Design promotional content",
+          "duration": "1 day",
+          "start_date": "2025-10-24",
+          "end_date": "2025-10-24",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "Social Media Campaign",
+          "description": "Launch social media presence",
+          "duration": "1 day",
+          "start_date": "2025-10-25",
+          "end_date": "2025-10-25",
+          "dependencies": ["Create Marketing Materials"],
+          "priority": "Medium"
+        }
+      ]
+    },
+    {
+      "phase": "Deployment",
+      "tasks": [
+        {
+          "task_name": "Prepare Production Environment",
+          "description": "Setup servers and infrastructure",
+          "duration": "1 day",
+          "start_date": "2025-10-26",
+          "end_date": "2025-10-26",
+          "dependencies": [],
+          "priority": "High"
+        },
+        {
+          "task_name": "Deploy to Production",
+          "description": "Launch the application",
+          "duration": "2 days",
+          "start_date": "2025-10-27",
+          "end_date": "2025-10-28",
+          "dependencies": ["Prepare Production Environment"],
+          "priority": "High"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "milestones": [
+      "Planning Complete (2025-10-16)",
+      "Development Complete (2025-10-21)",
+      "Deployment Complete (2025-10-28)"
+    ],
+    "remarks": "Optimized plan with 6 phases across 14 days. Timeline accounts for dependencies and realistic task allocation."
+  }
+}

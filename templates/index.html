@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Planner - AI-Powered Project Planning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background animated gradient -->
+    <div class="gradient-bg"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Smart Task Planner</h1>
+            </div>
+            <p class="tagline">AI-Powered Project Planning & Timeline Management</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <i class="fas fa-rocket"></i>
+                        <h2>What's Your Goal?</h2>
+                    </div>
+                    <p class="subtitle">Describe your project goal and timeline, and let AI create a smart plan for you.</p>
+                    
+                    <div class="input-group">
+                        <textarea 
+                            id="goalInput" 
+                            placeholder="e.g., Launch a mobile app in 2 weeks, Build a website in 10 days, Plan a marketing campaign in 1 month..."
+                            rows="3"
+                        ></textarea>
+                        <div class="ai-badge" id="aiBadge" style="display: none;">
+                            <i class="fas fa-sparkles"></i> Google AI Enhanced
+                        </div>
+                        <button id="generateBtn" class="btn-generate">
+                            <i class="fas fa-magic"></i>
+                            <span>Generate Plan</span>
+                        </button>
+                    </div>
+
+                    <!-- Examples -->
+                    <div class="examples">
+                        <p class="examples-title">Try these examples:</p>
+                        <div class="example-chips">
+                            <button class="chip" data-example="Launch a product in 2 weeks">
+                                <i class="fas fa-box"></i> Product Launch (2 weeks)
+                            </button>
+                            <button class="chip" data-example="Build a mobile app in 20 days">
+                                <i class="fas fa-mobile-alt"></i> Mobile App (20 days)
+                            </button>
+                            <button class="chip" data-example="Create a marketing campaign in 1 month">
+                                <i class="fas fa-bullhorn"></i> Marketing Campaign (1 month)
+                            </button>
+                            <button class="chip" data-example="Organize a conference in 3 weeks">
+                                <i class="fas fa-calendar-alt"></i> Event Planning (3 weeks)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Animation -->
+            <div id="loadingSection" class="loading-section hidden">
+                <div class="glass-card">
+                    <div class="loader">
+                        <div class="spinner"></div>
+                        <p>AI is analyzing your goal...</p>
+                        <p class="loading-subtext">Creating optimized timeline with dependencies</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section hidden">
+                <!-- Plan Overview -->
+                <div class="plan-overview glass-card fade-in">
+                    <div class="overview-header">
+                        <div class="overview-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h2 id="planGoal">Your Project Plan</h2>
+                            <p id="planDuration" class="duration-text"></p>
+                        </div>
+                    </div>
+                    <div class="overview-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <div>
+                                <p class="stat-label">Start Date</p>
+                                <p id="startDate" class="stat-value">-</p>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-flag-checkered"></i>
+                            <div>
+                                <p class="stat-label">Target Date</p>
+                                <p id="endDate" class="stat-value">-</p>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-tasks"></i>
+                            <div>
+                                <p class="stat-label">Total Phases</p>
+                                <p id="totalPhases" class="stat-value">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Progress -->
+                <div class="timeline-container glass-card fade-in">
+                    <h3><i class="fas fa-stream"></i> Project Timeline</h3>
+                    <div id="timelineProgress" class="timeline-progress">
+                        <!-- Timeline bars will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Phases and Tasks -->
+                <div class="phases-container">
+                    <h3 class="section-title">
+                        <i class="fas fa-layer-group"></i> 
+                        Detailed Breakdown
+                    </h3>
+                    <div id="phasesContainer">
+                        <!-- Phase cards will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Milestones -->
+                <div class="milestones-container glass-card fade-in">
+                    <div class="card-header">
+                        <i class="fas fa-trophy"></i>
+                        <h3>Key Milestones</h3>
+                    </div>
+                    <div id="milestonesContainer" class="milestones-grid">
+                        <!-- Milestones will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-container glass-card fade-in">
+                    <div class="card-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Summary & Insights</h3>
+                    </div>
+                    <p id="summaryRemarks" class="summary-text"></p>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Print Plan
+                        </button>
+                        <button class="btn-secondary" id="downloadBtn">
+                            <i class="fas fa-download"></i> Download JSON
+                        </button>
+                        <button class="btn-primary" id="newPlanBtn">
+                            <i class="fas fa-plus"></i> Create New Plan
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Smart Task Planner. Powered by Advanced AI.</p>
+            <p class="footer-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
