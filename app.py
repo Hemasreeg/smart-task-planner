@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
 import json
 import os
+import re
 
 # Google AI Integration
 try:
@@ -52,22 +53,29 @@ class SmartTaskPlanner:
         return 'default'
 
     def parse_duration(self, goal):
-        """Extract duration from goal text"""
+        """Extract duration from goal text using regex for better matching"""
         goal_lower = goal.lower()
-
-        if 'day' in goal_lower:
-            for i in range(1, 100):
-                if f"{i} day" in goal_lower:
-                    return i
-        if 'week' in goal_lower:
-            for i in range(1, 20):
-                if f"{i} week" in goal_lower:
-                    return i * 7
-        if 'month' in goal_lower:
-            for i in range(1, 12):
-                if f"{i} month" in goal_lower:
-                    return i * 30
-        return 14  # default
+        
+        # Use regex to find number + time unit patterns (handles extra spaces, plural/singular)
+        # Pattern: number followed by optional spaces and 'day', 'days', 'week', 'weeks', 'month', 'months'
+        
+        # Check for days (e.g., "10 days", "10  days", "10 day")
+        day_match = re.search(r'(\d+)\s*days?', goal_lower)
+        if day_match:
+            return int(day_match.group(1))
+        
+        # Check for weeks (e.g., "2 weeks", "2  week", "2 weeks")
+        week_match = re.search(r'(\d+)\s*weeks?', goal_lower)
+        if week_match:
+            return int(week_match.group(1)) * 7
+        
+        # Check for months (e.g., "1 month", "1  months", "2 month")
+        month_match = re.search(r'(\d+)\s*months?', goal_lower)
+        if month_match:
+            return int(month_match.group(1)) * 30
+        
+        # Default to 14 days if no duration found
+        return 14
     
     def generate_tasks_for_phase(self, phase, project_type, phase_duration, start_date):
         """Generate tasks for each phase"""
